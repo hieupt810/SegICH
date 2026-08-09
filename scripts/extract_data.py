@@ -3,6 +3,7 @@
 import argparse
 import csv
 import logging
+import shutil
 import sys
 from pathlib import Path
 
@@ -26,6 +27,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--nifti_dir", type=Path, required=True, help="Directory of NIfTI files.")
     parser.add_argument("--nrrd_dir", type=Path, required=True, help="Directory of NRRD files.")
     parser.add_argument("--output_dir", type=Path, required=True, help="Directory for outputs.")
+    parser.add_argument(
+        "--overwrite", action="store_true", help="Overwrite output_dir if it exists."
+    )
     return parser.parse_args()
 
 
@@ -144,8 +148,8 @@ def process_volume(
         img_u8 = window_normalize(image_slice, WINDOW_LEVEL, WINDOW_WIDTH)
         img_resized = cv2.resize(img_u8, TARGET_SIZE, interpolation=cv2.INTER_LINEAR)
 
-        image_out = image_dir / f"{id_}_{z}.png"
-        mask_out = mask_dir / f"{id_}_{z}.png"
+        image_out = image_dir / f"{id_}_{z:04d}.png"
+        mask_out = mask_dir / f"{id_}_{z:04d}.png"
         cv2.imwrite(str(image_out), img_resized)
         cv2.imwrite(str(mask_out), mask_resized)
 
@@ -169,6 +173,9 @@ def main() -> None:
     if not args.nrrd_dir.is_dir():
         logging.error("--nrrd_dir does not exist or is not a directory: %s", args.nrrd_dir)
         sys.exit(1)
+
+    if args.overwrite and args.output_dir.exists():
+        shutil.rmtree(args.output_dir)
 
     image_dir = args.output_dir / "image"
     mask_dir = args.output_dir / "mask"
