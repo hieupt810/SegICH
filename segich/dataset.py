@@ -45,3 +45,20 @@ class SegichDataset(Dataset):
             image, mask = self.transform(image, mask)
 
         return image, mask
+
+
+class SyntheticSegmentationDataset(Dataset):
+    """Randomly generated image/mask pairs for fast, disk-free training-loop verification."""
+
+    def __init__(self, num_samples: int = 16, image_size: tuple[int, int] = (64, 64)) -> None:
+        self.num_samples = num_samples
+        self.image_size = image_size
+
+    def __len__(self) -> int:
+        return self.num_samples
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        h, w = self.image_size
+        image = torch.rand(3, h, w)
+        mask = (torch.rand(h, w) > 0.5).float()
+        return image, mask
