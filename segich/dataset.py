@@ -30,13 +30,16 @@ class SegichDataset(Dataset):
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         image_path, mask_path = self.pairs[idx]
 
-        image = cv2.imread(image_path, cv2.IMREAD_COLOR_RGB)
-        if image is None:
+        img_arr = cv2.imread(image_path, cv2.IMREAD_COLOR_RGB)
+        if img_arr is None:
             raise FileNotFoundError(f"Failed to read image at index {idx}: {image_path}")
 
-        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-        if mask is None:
+        msk_arr = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+        if msk_arr is None:
             raise FileNotFoundError(f"Failed to read mask at index {idx}: {mask_path}")
+
+        image = torch.from_numpy(img_arr).permute(2, 0, 1).float() / 255.0
+        mask = torch.from_numpy(msk_arr).long() / 255.0
 
         if self.transform is not None:
             image, mask = self.transform(image, mask)
