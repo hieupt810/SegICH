@@ -1,12 +1,16 @@
 import logging
 import random
+from pathlib import Path
 
 import torch
 
 
-def configure_logging() -> None:
-    """Configure stderr logging so progress/warnings don't pollute stdout."""
-    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+def configure_logging(log_file: Path | str | None = None) -> None:
+    """Configure stderr logging, optionally also duplicating INFO+ records to a log file."""
+    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    if log_file is not None:
+        handlers.append(logging.FileHandler(log_file, mode="w"))
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s", handlers=handlers)
 
 
 def set_seed(seed: int) -> None:

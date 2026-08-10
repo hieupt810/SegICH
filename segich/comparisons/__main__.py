@@ -56,8 +56,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--checkpoint-dir",
         type=str,
-        default="checkpoints/best_model",
-        help="Directory to save the best validation-Dice checkpoint.",
+        default="checkpoints",
+        help="Root directory; checkpoint is saved under <checkpoint-dir>/<arch>_<encoder>/best.",
     )
     parser.add_argument(
         "--bce-weight", type=float, default=0.5, help="Weight for the BCE loss term."
@@ -298,7 +298,9 @@ def main() -> None:
         run_smoke_test(args)
         return
 
-    configure_logging()
+    checkpoint_dir = Path(args.checkpoint_dir) / f"{args.arch}_{args.encoder}"
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    configure_logging(log_file=checkpoint_dir / "progress.out")
     set_seed(args.seed)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -323,7 +325,6 @@ def main() -> None:
         len(val_loader.dataset),
     )
 
-    checkpoint_dir = Path(args.checkpoint_dir)
     best_dice = -1.0
     best_metrics: dict[float, dict[str, float]] = {}
 
@@ -356,12 +357,12 @@ def main() -> None:
         if epoch_dice > best_dice:
             best_dice = epoch_dice
             best_metrics = metrics
-            model.save_pretrained(checkpoint_dir)
+            model.save_pretrained(checkpoint_dir / "best")
             logging.info(
                 "Epoch %d: new best val_dice=%.4f, saved checkpoint to %s",
                 epoch,
                 best_dice,
-                checkpoint_dir,
+                checkpoint_dir / "best",
             )
 
     print(format_metrics_table(best_metrics))
